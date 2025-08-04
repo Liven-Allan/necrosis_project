@@ -29,6 +29,15 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Debug directory structure
+      run: |
+        pwd
+        ls -la
+        echo "Checking NecrosisApi directory:"
+        ls -la NecrosisApi/
+        echo "Checking necrosisapp directory:"
+        ls -la necrosisapp/
+
     - name: Build backend image
       run: |
         docker build -t ${{ env.BACKEND_IMAGE }}:${{ env.LATEST_TAG }} ./NecrosisApi
