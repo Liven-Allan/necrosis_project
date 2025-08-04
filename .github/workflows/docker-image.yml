@@ -1,10 +1,15 @@
-name: Build and Push Docker Images
+name: Build Docker Images
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+env:
+  BACKEND_IMAGE: backend
+  FRONTEND_IMAGE: frontend
+  LATEST_TAG: latest
 
 jobs:
   build:
@@ -17,21 +22,24 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Build backend image
-      run: docker build -t backend:latest ./NecrosisApi
+      run: |
+        docker build -t ${{ env.BACKEND_IMAGE }}:${{ env.LATEST_TAG }} ./NecrosisApi
+        docker tag ${{ env.BACKEND_IMAGE }}:${{ env.LATEST_TAG }} ghcr.io/${{ github.repository_owner }}/${{ env.BACKEND_IMAGE }}:${{ env.LATEST_TAG }}
 
     - name: Build frontend image
-      run: docker build -t frontend:latest ./necrosisapp
+      run: |
+        docker build -t ${{ env.FRONTEND_IMAGE }}:${{ env.LATEST_TAG }} ./necrosisapp
+        docker tag ${{ env.FRONTEND_IMAGE }}:${{ env.LATEST_TAG }} ghcr.io/${{ github.repository_owner }}/${{ env.FRONTEND_IMAGE }}:${{ env.LATEST_TAG }}
 
-    # Optionally, add steps to push to Docker Hub or GHCR
-    # - name: Log in to Docker Hub
-    #   uses: docker/login-action@v2
-    #   with:
-    #     username: ${{ secrets.DOCKER_USERNAME }}
-    #     password: ${{ secrets.DOCKER_PASSWORD }}
-    #
-    # - name: Push backend image
-    #   run: docker tag backend:latest yourdockerhub/backend:latest && docker push yourdockerhub/backend:latest
-    #
-    # - name: Push frontend image
-    #   run: docker tag frontend:latest yourdockerhub/frontend:latest && docker push yourdockerhub/frontend:latest
+    - name: Push images to GitHub Container Registry
+      run: |
+        docker push ghcr.io/${{ github.repository_owner }}/${{ env.BACKEND_IMAGE }}:${{ env.LATEST_TAG }}
+        docker push ghcr.io/${{ github.repository_owner }}/${{ env.FRONTEND_IMAGE }}:${{ env.LATEST_TAG }}
